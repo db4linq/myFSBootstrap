@@ -13,8 +13,8 @@
 #define DBG_OUTPUT_PORT Serial
 
 const String deviceId = "123456789";
-const char* ssid = "sujin_seedum";
-const char* password = "0891185329";
+const char* ssid = "SSID";
+const char* password = "PASSWORD";
 const char* host = "esp8266fs";
 #define DHTTYPE   DHT22           // DHT type (DHT11, DHT22)
 #define DHTPIN    D4  
