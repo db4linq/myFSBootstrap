@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+	
+    <title>Temperature</title> 
+    <link href="bootstrap.css" rel="stylesheet"> 
+    <link href="navbar.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="style.css" /> 
+	<style>
+	    .col-centered {
+	        text-align: center;  
+	    }
+	    .centered {
+	        position: absolute;
+	        top: 80px;
+	        left: 50%;
+	        transform: translate(-50%,-50%);
+	    }
+	    .gauge-body {
+	        padding-top: 20px;
+	        padding-bottom: 10px; 
+	    } 
+		.led-on {
+		  margin: 0 auto;
+		  width: 24px;
+		  height: 24px;
+		  background-color: #ABFF00;
+		  border-radius: 50%;
+		  box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #304701 0 -1px 9px, #89FF00 0 2px 12px;
+		}
+		.led-off {
+		  margin: 0 auto;
+		  width: 24px;
+		  height: 24px;
+		  background-color: #669900;
+		  border-radius: 50%;
+		  box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #304701 0 -1px 9px, #89FF00 0 2px 12px;
+		}
+	</style>
+
+    <script src="jquery.js"></script>
+    <script src="bootstrap.js"></script> 
+    <script src="raphael-2.1.4.min.js"></script>
+    <script src="justgage.js"></script>
+
+    <script language="javascript" type="text/javascript">
+        var websocket; 
+
+        $(document).ready(function(){ 
+            console.log('System Ready...');
+            function startSocket(){
+                var wsUri = "ws://" + location.host + ":8001/";
+                websocket = new WebSocket(wsUri);
+                websocket.onopen = function(evt) { console.log("CONNECTED");  };
+                websocket.onclose = function(evt) { console.log("DISCONNECTED"); };
+                websocket.onmessage = function(evt) { onMessage(evt) };
+                websocket.onerror = function(evt) { console.log('ERROR: ', evt.data); };
+            }
+
+            function onMessage(evt)
+            {              
+                let obj = JSON.parse(evt.data);
+                console.log('Socket Message: ', obj); 
+                if (obj.type == 2) {
+                	g1.refresh(obj.temperature);
+                	g2.refresh(obj.humidity);
+                }
+				if (obj.type === 1) {
+	                var src = (obj.value === 0)
+		            	? false : true;
+		         	$('#sw').prop( "checked", src ); 
+		         	if (src) {
+		         		$('#led').removeClass('led-off');
+		         		$('#led').addClass('led-on');
+		         	} else {
+		         		$('#led').removeClass('led-on');
+		         		$('#led').addClass('led-off');
+		         	}
+                }
+            }
+
+            function doSend(message)
+            {
+                websocket.send(message);
+            }
+            
+			var g1 = new JustGage({
+			        id: 'g1',
+			        value: 30,
+			        min: 0,
+			        max: 100,
+			        symbol: '°c',
+			        pointer: true,
+			        pointerOptions: {
+			          toplength: -15,
+			          bottomlength: 10,
+			          bottomwidth: 12,
+			          color: '#8e8e93',
+			          stroke: '#ffffff',
+			          stroke_width: 3,
+			          stroke_linecap: 'round'
+			        },
+			        gaugeWidthScale: 0.4,
+			        counter: true
+			      });
+			      
+			var g2 = new JustGage({
+			        id: 'g2',
+			        value: 60,
+			        min: 0,
+			        max: 100,
+			        symbol: '%',
+			        pointer: true,
+			        pointerOptions: {
+			          toplength: -15,
+			          bottomlength: 10,
+			          bottomwidth: 12,
+			          color: '#8e8e93',
+			          stroke: '#ffffff',
+			          stroke_width: 3,
+			          stroke_linecap: 'round'
+			        },
+			        gaugeWidthScale: 0.4,
+			        counter: true
+			      });			      
+
+            startSocket(); 
+			$('#sw').on('click', function() {
+				let json = {type: 1, value: ""};
+				websocket.send(JSON.stringify(json));
+            });
+        });
+    </script>
+
+</head>
+
+<body>
+
+<div class="container">
+    <!-- Static navbar -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/">SMART TEMP</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li  class="active"><a href="/">Home</a></li> 
+                    <li><a href="/temp">Temp Config</a></li>  
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/config">Config</a></li>  
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+    </nav>
+    <!-- Main component for a primary marketing message or call to action -->
+    <div class="jumbotron">
+    	<div class="row">
+    		<div class="col-sm-12" style="margin: 10px">
+		        <h3>SMART TEMP (v2008.0.1.8)</h3>
+		        <p>Device ID: [123456789]</p> 
+	        </div>
+        </div>
+    </div>
+    
+    <div class="row">
+    	<div class="col-sm-12 col-md-4 col-lg-4"> 
+	    	 <div class="panel panel-default">
+				  <div class="panel-heading">
+				    <h3 class="panel-title">Temperature</h3>
+				  </div>
+				  <div class="panel-body">
+				    <center><div id="g1" class="gauge"></div></center>
+				  </div>
+			</div>
+    	</div>
+    	<div class="col-sm-12 col-md-4 col-lg-4"> 
+	    	 <div class="panel panel-default">
+				  <div class="panel-heading">
+				    <h3 class="panel-title">Humidity</h3>
+				  </div>
+				  <div class="panel-body">
+				    <center><div id="g2" class="gauge"></div></center>
+				  </div>
+			</div>	    	 
+		</div>
+		<div class="col-sm-12 col-md-4 col-lg-4"> 
+					<table class="centered">
+						<tr>
+							<td style="width: 110px;">
+								<div class="switch demo2">
+									<input type="checkbox" id="sw"> 
+									<label></label>
+								</div>	
+								<div id="led" class="led-off"></div>  			
+							</td> 	    				    				    			    			
+						</tr> 
+					</table>
+		</div>
+    </div>  
+</div> <!-- /container -->
+
+</body>
+</html>
